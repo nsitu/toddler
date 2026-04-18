@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Toddler Balloon Emojis</title>
+    <style>
+      :root {
+        color-scheme: dark;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        overflow: hidden;
+        font-family: system-ui, -apple-system, sans-serif;
+        background: radial-gradient(circle at top, #2d325a, #0d1028 55%, #060815);
+      }
+
+      .instructions {
+        position: fixed;
+        inset: auto 0 2rem;
+        text-align: center;
+        color: #f7f8ff;
+        font-size: clamp(1rem, 2vw, 1.25rem);
+        text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+        pointer-events: none;
+        z-index: 1;
+      }
+
+      .emoji {
+        position: fixed;
+        bottom: -3rem;
+        user-select: none;
+        pointer-events: none;
+        animation: float-up linear forwards;
+        filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.25));
+        will-change: transform;
+      }
+
+      @keyframes float-up {
+        from {
+          transform: translateY(0) rotate(var(--tilt));
+          opacity: 1;
+        }
+        to {
+          transform: translateY(-120vh) rotate(var(--tilt));
+          opacity: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="instructions">Press any connected gamepad button to launch emoji balloons 🎈</div>
+
+    <script>
+      const EMOJIS = [
+        "🎈",
+        "🎉",
+        "✨",
+        "🫧",
+        "🌟",
+        "💖",
+        "🦄",
+        "🌈",
+        "🍭",
+        "😄",
+        "🥳",
+        "🐣"
+      ];
+
+      const previousPressedStates = new Map();
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      function spawnEmoji() {
+        const node = document.createElement("span");
+        node.className = "emoji";
+        node.textContent = EMOJIS[Math.floor(Math.random() * EMOJIS.length)];
+
+        const size = randomInRange(2, 6);
+        node.style.fontSize = `${size}rem`;
+        node.style.left = `${randomInRange(2, 95)}vw`;
+        node.style.setProperty("--tilt", `${randomInRange(-20, 20)}deg`);
+        node.style.animationDuration = `${randomInRange(3, 7)}s`;
+
+        node.addEventListener("animationend", () => node.remove(), { once: true });
+        document.body.appendChild(node);
+      }
+
+      function watchGamepadButtons() {
+        const gamepads = navigator.getGamepads ? navigator.getGamepads() : [];
+
+        for (const gamepad of gamepads) {
+          if (!gamepad) continue;
+
+          const previous = previousPressedStates.get(gamepad.index) || [];
+          const current = gamepad.buttons.map((button) => button.pressed);
+
+          current.forEach((pressed, buttonIndex) => {
+            if (pressed && !previous[buttonIndex]) {
+              spawnEmoji();
+            }
+          });
+
+          previousPressedStates.set(gamepad.index, current);
+        }
+
+        requestAnimationFrame(watchGamepadButtons);
+      }
+
+      window.addEventListener("gamepaddisconnected", (event) => {
+        previousPressedStates.delete(event.gamepad.index);
+      });
+
+      requestAnimationFrame(watchGamepadButtons);
+    </script>
+  </body>
+</html>
